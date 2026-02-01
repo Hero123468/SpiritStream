@@ -1,0 +1,280 @@
+index.html
+original working clean code:
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Bible Daily TTS (KJV Only)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      margin: 0;
+      padding: 1.5rem;
+      background: #f5f5f7;
+      color: #222;
+    }
+    h1 { font-size: 1.6rem; margin-bottom: 0.25rem; }
+    h2 { font-size: 1.2rem; margin-top: 1.5rem; }
+    .card {
+      background: #fff;
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+      margin-bottom: 1rem;
+    }
+    label { font-size: 0.9rem; font-weight: 600; display: block; margin-bottom: 0.25rem; }
+    input {
+      width: 100%;
+      padding: 0.5rem;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      font-size: 0.9rem;
+      box-sizing: border-box;
+    }
+    button {
+      padding: 0.5rem 0.9rem;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+      font-size: 0.9rem;
+      margin-right: 0.5rem;
+    }
+    button.primary { background: #2563eb; color: white; }
+    button.secondary { background: #e5e7eb; color: #111827; }
+    .small { font-size: 0.8rem; color: #555; }
+    .status { font-size: 0.85rem; margin-top: 0.5rem; color: #374151; }
+    .error { color: #b91c1c; }
+    .success { color: #166534; }
+    #chapterText {
+      max-height: 50vh;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      line-height: 1.5;
+      font-size: 0.95rem;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Bible Daily TTS (KJV)</h1>
+<div class="small">Reads one chapter per day · Uses API.Bible + browser TTS</div>
+
+<div class="card">
+  <h2>1. API.Bible Setup</h2>
+  <label>API Key</label>
+  <input id="apiKey" placeholder="Paste your API.Bible key" />
+  <button id="saveKey" class="secondary" style="margin-top:0.5rem;">Save Key</button>
+  <div id="keyStatus" class="status"></div>
+</div>
+
+<div class="card">
+  <h2>2. Reading Plan</h2>
+  <div class="small">Psalms → Proverbs → Acts → 1 Chronicles</div>
+  <button id="resetProgress" class="secondary" style="margin-top:0.5rem;">Reset Progress</button>
+  <div id="resetStatus" class="status"></div>
+</div>
+
+<div class="card">
+  <h2>3. Today's Reading</h2>
+  <div id="todayInfo" class="small">Loading…</div>
+
+  <button id="play" class="primary" style="margin-top:0.75rem;">Play</button>
+  <button id="stop" class="secondary">Stop</button>
+  <button id="next" class="secondary">Force Next</button>
+
+  <div id="playStatus" class="status"></div>
+
+  <h2 style="margin-top:1.25rem;">Chapter Text</h2>
+  <div id="chapterText">No text loaded.</div>
+</div>
+
+<script>
+/* ---------------- CONFIG ---------------- */
+
+const BIBLE_ID = "de4e12af7f28f599-01"; // KJV (free tier)
+const PLAN = [
+  { id: "PSA", name: "Psalms", start: 1, end: 150 },
+  { id: "PRO", name: "Proverbs", start: 1, end: 31 },
+  { id: "ACT", name: "Acts", start: 1, end: 28 },
+  { id: "1CH", name: "1 Chronicles", start: 1, end: 29 }
+];
+
+const STORAGE_KEY = "bibleTTS_progress_kjv";
+const STORAGE_KEY_API = "bibleTTS_apiKey_kjv";
+
+/* ---------------- DOM ---------------- */
+
+const apiKeyInput = document.getElementById("apiKey");
+const saveKeyBtn = document.getElementById("saveKey");
+const keyStatus = document.getElementById("keyStatus");
+
+const resetBtn = document.getElementById("resetProgress");
+const resetStatus = document.getElementById("resetStatus");
+
+const todayInfo = document.getElementById("todayInfo");
+const chapterTextDiv = document.getElementById("chapterText");
+
+const playBtn = document.getElementById("play");
+const stopBtn = document.getElementById("stop");
+const nextBtn = document.getElementById("next");
+const playStatus = document.getElementById("playStatus");
+
+/* ---------------- STATE ---------------- */
+
+let progress = null;
+let currentText = "";
+
+/* ---------------- UTIL ---------------- */
+
+function todayISO() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function loadApiKey() {
+  const key = localStorage.getItem(STORAGE_KEY_API);
+  if (key) apiKeyInput.value = key;
+}
+
+function saveApiKey() {
+  const key = apiKeyInput.value.trim();
+  if (!key) {
+    keyStatus.textContent = "API key cleared.";
+    keyStatus.className = "status";
+    localStorage.removeItem(STORAGE_KEY_API);
+    return;
+  }
+  localStorage.setItem(STORAGE_KEY_API, key);
+  keyStatus.textContent = "API key saved.";
+  keyStatus.className = "status success";
+}
+
+function loadProgress() {
+  const stored = localStorage.getItem(STORAGE_KEY);
+  if (stored) {
+    progress = JSON.parse(stored);
+  } else {
+    progress = { planIndex: 0, chapter: 1, lastPlayed: null };
+    saveProgress();
+  }
+}
+
+function saveProgress() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+}
+
+function resetProgress() {
+  progress = { planIndex: 0, chapter: 1, lastPlayed: null };
+  saveProgress();
+  resetStatus.textContent = "Progress reset.";
+  resetStatus.className = "status success";
+  loadToday();
+}
+
+/* ---------------- FETCH CHAPTER ---------------- */
+
+async function fetchChapter() {
+  const entry = PLAN[progress.planIndex];
+  const chapterId = `${entry.id}.${progress.chapter}`;
+
+  chapterTextDiv.textContent = "Loading…";
+
+  try {
+    const res = await fetch(`/chapter?bibleId=${BIBLE_ID}&chapterId=${chapterId}`);
+    if (!res.ok) throw new Error("HTTP " + res.status);
+
+    const data = await res.json();
+    const tmp = document.createElement("div");
+    tmp.innerHTML = data.data.content;
+    currentText = tmp.textContent.trim();
+    chapterTextDiv.textContent = currentText;
+  } catch (e) {
+    chapterTextDiv.textContent = "Error loading chapter.";
+    playStatus.textContent = "Fetch failed.";
+    playStatus.className = "status error";
+  }
+}
+
+
+/* ---------------- DAILY LOGIC ---------------- */
+
+function advance() {
+  const entry = PLAN[progress.planIndex];
+  if (progress.chapter < entry.end) {
+    progress.chapter++;
+  } else {
+    progress.planIndex = (progress.planIndex + 1) % PLAN.length;
+    progress.chapter = PLAN[progress.planIndex].start;
+  }
+  saveProgress();
+}
+
+function loadToday() {
+  const entry = PLAN[progress.planIndex];
+  todayInfo.textContent = `Today's chapter: ${entry.name} ${progress.chapter}`;
+  fetchChapter();
+}
+
+/* ---------------- TTS ---------------- */
+
+function speak() {
+  if (!currentText) {
+    playStatus.textContent = "No text loaded.";
+    playStatus.className = "status error";
+    return;
+  }
+
+  const u = new SpeechSynthesisUtterance(currentText);
+  u.onstart = () => {
+    playStatus.textContent = "Reading…";
+    playStatus.className = "status";
+  };
+  u.onend = () => {
+    playStatus.textContent = "Done.";
+    playStatus.className = "status success";
+    progress.lastPlayed = todayISO();
+    saveProgress();
+  };
+
+  speechSynthesis.cancel();
+  speechSynthesis.speak(u);
+}
+
+function stop() {
+  speechSynthesis.cancel();
+  playStatus.textContent = "Stopped.";
+}
+
+/* ---------------- EVENTS ---------------- */
+
+saveKeyBtn.onclick = saveApiKey;
+resetBtn.onclick = resetProgress;
+
+playBtn.onclick = () => {
+  const today = todayISO();
+  if (progress.lastPlayed !== today && progress.lastPlayed !== null) {
+    advance();
+    loadToday();
+  }
+  speak();
+};
+
+stopBtn.onclick = stop;
+
+nextBtn.onclick = () => {
+  stop();
+  advance();
+  progress.lastPlayed = null;
+  saveProgress();
+  loadToday();
+};
+
+/* ---------------- INIT ---------------- */
+
+loadApiKey();
+loadProgress();
+loadToday();
+
+</script>
+</body>
+</html>
