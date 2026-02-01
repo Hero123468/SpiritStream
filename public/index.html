@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Spirit Stream - Bible Daily TTS</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      margin: 0;
+      padding: 1.5rem;
+      background: #f5f5f7;
+      color: #222;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    body.dark {
+      background: #1a1a1a;
+      color: #e5e5e5;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .subtitle {
+      font-size: 0.9rem;
+      color: #666;
+      margin-bottom: 1.5rem;
+    }
+
+    body.dark .subtitle {
+      color: #999;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      margin-bottom: 1.5rem;
+    }
+
+    body.dark .card {
+      background: #2a2a2a;
+      box-shadow: 0 2px 8px rgba(255,255,255,0.05);
+    }
+
+    button {
+      padding: 0.6rem 1rem;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-size: 0.95rem;
+      margin-right: 0.5rem;
+      margin-bottom: 0.5rem;
+      transition: all 0.2s;
+    }
+
+    button.primary {
+      background: #2563eb;
+      color: white;
+      font-weight: 600;
+    }
+
+    button.primary:hover {
+      background: #1d4ed8;
+    }
+
+    button.secondary {
+      background: #e5e7eb;
+      color: #111827;
+    }
+
+    body.dark button.secondary {
+      background: #444;
+      color: #eee;
+    }
+
+    button.secondary:hover {
+      background: #d1d5db;
+    }
+
+    body.dark button.secondary:hover {
+      background: #555;
+    }
+
+    /* Playlist Progress Bar */
+    #playlistProgressContainer {
+      width: 100%;
+      height: 8px;
+      background: #ddd;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 1.5rem;
+    }
+
+    body.dark #playlistProgressContainer {
+      background: #444;
+    }
+
+    #playlistProgressBar {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, #2563eb, #3b82f6);
+      transition: width 0.5s ease;
+    }
+
+    /* Play Button with Ring */
+    #playWrapper {
+      position: relative;
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 1.5rem;
+    }
+
+    #playRing {
+      position: absolute;
+      top: 0;
+      left: 0;
+      transform: rotate(-90deg);
+    }
+
+    #playRing circle {
+      fill: none;
+      stroke: #3b82f6;
+      stroke-width: 4;
+      stroke-dasharray: 214;
+      stroke-dashoffset: 214;
+      transition: stroke-dashoffset 0.3s linear;
+    }
+
+    #play {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      font-size: 0.85rem;
+      margin: 0;
+    }
+
+    /* Chapter Progress Bar */
+    #progressContainer {
+      width: 100%;
+      height: 6px;
+      background: #ddd;
+      border-radius: 3px;
+      overflow: hidden;
+      margin-bottom: 1rem;
+    }
+
+    body.dark #progressContainer {
+      background: #444;
+    }
+
+    #progressBar {
+      width: 0%;
+      height: 100%;
+      background: #2563eb;
+      transition: width 0.25s linear;
+    }
+
+    body.dark #progressBar {
+      background: #3b82f6;
+    }
+
+    /* Chapter Text */
+    #chapterText {
+      max-height: 50vh;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      line-height: 1.6;
+      font-size: 0.95rem;
+      padding: 1rem;
+      background: #f9fafb;
+      border-radius: 6px;
+      margin-bottom: 1rem;
+    }
+
+    body.dark #chapterText {
+      background: #1f1f1f;
+      color: #ddd;
+    }
+
+    .status {
+      font-size: 0.9rem;
+      margin-top: 0.75rem;
+      color: #374151;
+    }
+
+    body.dark .status {
+      color: #ccc;
+    }
+
+    .status.error {
+      color: #dc2626;
+    }
+
+    body.dark .status.error {
+      color: #f87171;
+    }
+
+    .status.success {
+      color: #16a34a;
+    }
+
+    body.dark .status.success {
+      color: #4ade80;
+    }
+
+    .controls {
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
+    }
+
+    input {
+      width: 100%;
+      padding: 0.6rem;
+      border-radius: 6px;
+      border: 1px solid #d1d5db;
+      font-size: 0.95rem;
+      margin-bottom: 0.75rem;
+    }
+
+    body.dark input {
+      background: #333;
+      color: #eee;
+      border-color: #555;
+    }
+
+    #todayInfo {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #2563eb;
+      margin-bottom: 1rem;
+    }
+
+    body.dark #todayInfo {
+      color: #60a5fa;
+    }
+  </style>
+</head>
+<body>
+
+  <button id="toggleTheme" class="secondary" style="float: right;">🌙 Dark Mode</button>
+  
+  <h1>Spirit Stream</h1>
+  <div class="subtitle">Daily Bible reading • KJV • Browser TTS</div>
+
+  <!-- Playlist Progress -->
+  <div id="playlistProgressContainer">
+    <div id="playlistProgressBar"></div>
+  </div>
+
+  <!-- Play Button with Ring -->
+  <div id="playWrapper">
+    <svg id="playRing" width="80" height="80">
+      <circle cx="40" cy="40" r="34"></circle>
+    </svg>
+    <button id="play" class="primary">▶ Play</button>
+  </div>
+
+  <!-- Playback Controls -->
+  <div class="controls">
+    <button id="pause" class="secondary">⏸ Pause</button>
+    <button id="stop" class="secondary">⏹ Stop</button>
+    <button id="next" class="secondary">⏭ Next</button>
+  </div>
+
+  <!-- Today's Reading Info -->
+  <div class="card">
+    <div id="todayInfo">Loading...</div>
+    
+    <!-- Chapter Progress -->
+    <div id="progressContainer">
+      <div id="progressBar"></div>
+    </div>
+
+    <!-- Chapter Text -->
+    <div id="chapterText">Press Play to begin</div>
+    
+    <!-- Status -->
+    <div id="playStatus" class="status"></div>
+  </div>
+
+  <!-- Settings -->
+  <div class="card">
+    <h2 style="font-size: 1.1rem; margin-top: 0;">⚙️ Settings</h2>
+    
+    <label>API.Bible Key</label>
+    <input id="apiKey" type="text" value="ZqWz4AkUdqS7yQj5H5wCr" />
+    <button id="saveKey" class="secondary">Save Key</button>
+    <div id="keyStatus" class="status"></div>
+
+    <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid #e5e7eb;">
+
+    <label>Reading Plan</label>
+    <div style="font-size: 0.9rem; color: #666; margin-bottom: 1rem;">
+      Psalms → Proverbs → Acts → 1 Chronicles
+    </div>
+    <button id="resetProgress" class="secondary">🔄 Reset Progress</button>
+    <div id="resetStatus" class="status"></div>
+  </div>
+
+  <script>
+    /* ============================================
+       CONFIG
+       ============================================ */
+    const BIBLE_ID = "de4e12af7f28f599-01"; // KJV
+    const PLAN = [
+      { id: "PSA", apiId: "PSA", name: "Psalms", start: 1, end: 150 },
+      { id: "PRO", apiId: "PRO", name: "Proverbs", start: 1, end: 31 },
+      { id: "ACT", apiId: "ACT", name: "Acts", start: 1, end: 28 },
+      { id: "CH1", apiId: "1CH", name: "1 Chronicles", start: 1, end: 29 }
+    ];
+
+    const STORAGE_KEY = "bibleTTS_progress";
+    const STORAGE_KEY_API = "bibleTTS_apiKey";
+
+    /* ============================================
+       DOM ELEMENTS
+       ============================================ */
+    const apiKeyInput = document.getElementById("apiKey");
+    const saveKeyBtn = document.getElementById("saveKey");
+    const keyStatus = document.getElementById("keyStatus");
+    const resetBtn = document.getElementById("resetProgress");
+    const resetStatus = document.getElementById("resetStatus");
+    const todayInfo = document.getElementById("todayInfo");
+    const chapterTextDiv = document.getElementById("chapterText");
+    const playBtn = document.getElementById("play");
+    const pauseBtn = document.getElementById("pause");
+    const stopBtn = document.getElementById("stop");
+    const nextBtn = document.getElementById("next");
+    const playStatus = document.getElementById("playStatus");
+    const toggleThemeBtn = document.getElementById("toggleTheme");
+    const progressBar = document.getElementById("progressBar");
+    const playlistProgressBar = document.getElementById("playlistProgressBar");
+    const playRing = document.getElementById("playRing").querySelector("circle");
+
+    /* ============================================
+       STATE
+       ============================================ */
+    let progress = null;
+    let currentText = "";
+    let playlistIndex = 0;
+    let isPaused = false;
+    let isSpeaking = false;
+    let progressInterval = null;
+    let utterance = null;
+
+    /* ============================================
+       UTILITIES
+       ============================================ */
+    function todayISO() {
+      return new Date().toISOString().slice(0, 10);
+    }
+
+    function loadApiKey() {
+      const key = localStorage.getItem(STORAGE_KEY_API);
+      if (key) apiKeyInput.value = key;
+    }
+
+    function saveApiKey() {
+      const key = apiKeyInput.value.trim();
+      console.log("API Key entered:", key); // Debug Line
+
+      if (!key || key === "") {
+        keyStatus.textContent = "❌ Please enter an API key first.";
+        keyStatus.className = "status error";
+        return;        
+      }
+
+      localStorage.setItem(STORAGE_KEY_API, key);
+      keyStatus.textContent = "✓ API key saved successfully!.";
+      keyStatus.className = "status success";
+      console.log("API Key saved to localStorage."); // Debug Line
+    }
+
+
+    function loadProgress() {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        progress = JSON.parse(stored);
+      } else {
+        progress = {
+          PSA: 1,
+          PRO: 1,
+          ACT: 1,
+          CH1: 1,
+          lastPlayed: null
+        };
+        saveProgress();
+      }
+    }
+
+    function saveProgress() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+    }
+
+    function resetProgress() {
+      progress = {
+        PSA: 1,
+        PRO: 1,
+        ACT: 1,
+        CH1: 1,
+        lastPlayed: null
+      };
+      playlistIndex = 0;
+      saveProgress();
+      resetStatus.textContent = "✓ Progress reset to day 1.";
+      resetStatus.className = "status success";
+      updatePlaylistProgress();
+      loadToday();
+    }
+
+    function updatePlaylistProgress() {
+      const percent = (playlistIndex / PLAN.length) * 100;
+      playlistProgressBar.style.width = percent + "%";
+    }
+
+    /* ============================================
+       FETCH CHAPTER
+       ============================================ */
+  async function fetchChapter() {
+  const entry = PLAN[playlistIndex];
+  const chapterNum = progress[entry.id];
+  const chapterId = `${entry.apiId}.${chapterNum}`;
+
+  chapterTextDiv.textContent = "Loading...";
+
+  try {
+    // Use proxy instead of direct API call
+    const res = await fetch(`/chapter?bibleId=${BIBLE_ID}&chapterId=${chapterId}`);
+    
+    if (!res.ok) throw new Error("HTTP " + res.status);
+
+    const data = await res.json();
+    const tmp = document.createElement("div");
+    tmp.innerHTML = data.data.content;
+    currentText = tmp.textContent.trim();
+    chapterTextDiv.textContent = currentText;
+  } catch (e) {
+    chapterTextDiv.textContent = "Error loading chapter.";
+    playStatus.textContent = "❌ " + e.message;
+    playStatus.className = "status error";
+    throw e;
+  }
+}
+
+    /* ============================================
+       DAILY LOGIC
+       ============================================ */
+    function advance() {
+      const entry = PLAN[playlistIndex];
+      if (progress[entry.id] < entry.end) {
+        progress[entry.id]++;
+      } else {
+        progress[entry.id] = entry.start;
+      }
+      saveProgress();
+    }
+
+    async function loadToday() {
+      const entry = PLAN[playlistIndex];
+      todayInfo.textContent = `📖 Track ${playlistIndex + 1} of ${PLAN.length}: ${entry.name} ${progress[entry.id]}`;
+      updatePlaylistProgress();
+      await fetchChapter();
+    }
+
+    /* ============================================
+       TTS
+       ============================================ */
+    function speak() {
+      if (!currentText) {
+        playStatus.textContent = "❌ No text loaded.";
+        playStatus.className = "status error";
+        return;
+      }
+
+      utterance = new SpeechSynthesisUtterance(currentText);
+
+      utterance.onstart = () => {
+        isSpeaking = true;
+        isPaused = false;
+        pauseBtn.textContent = "⏸ Pause";
+        playStatus.textContent = `🔊 Reading track ${playlistIndex + 1}...`;
+        playStatus.className = "status";
+
+        progressBar.style.width = "0%";
+        playRing.style.strokeDashoffset = "214";
+
+        progressInterval = setInterval(() => {
+          if (!utterance || !utterance.text) return;
+          if (!speechSynthesis.speaking || speechSynthesis.paused) return;
+
+          const total = utterance.text.length;
+          const current = utterance.charIndex || 0;
+          const percent = (current / total) * 100;
+
+          progressBar.style.width = percent + "%";
+          
+          const offset = 214 - (214 * percent / 100);
+          playRing.style.strokeDashoffset = offset;
+        }, 100);
+      };
+
+      utterance.onend = async () => {
+        clearInterval(progressInterval);
+        progressBar.style.width = "100%";
+        playRing.style.strokeDashoffset = "0";
+        
+        isSpeaking = false;
+
+        if (isPaused) return;
+
+        advance();
+        playlistIndex++;
+
+        if (playlistIndex < PLAN.length) {
+          await loadToday();
+          speak();
+        } else {
+          playStatus.textContent = "✓ Daily playlist complete!";
+          playStatus.className = "status success";
+          progress.lastPlayed = todayISO();
+          saveProgress();
+          playlistIndex = 0;
+          updatePlaylistProgress();
+        }
+      };
+
+      speechSynthesis.cancel();
+      speechSynthesis.speak(utterance);
+    }
+
+    function stop() {
+      speechSynthesis.cancel();
+      clearInterval(progressInterval);
+      isPaused = false;
+      isSpeaking = false;
+      pauseBtn.textContent = "⏸ Pause";
+      playStatus.textContent = "⏹ Stopped.";
+      progressBar.style.width = "0%";
+      playRing.style.strokeDashoffset = "214";
+    }
+
+    /* ============================================
+       EVENTS
+       ============================================ */
+    saveKeyBtn.onclick = saveApiKey;
+    resetBtn.onclick = resetProgress;
+
+    toggleThemeBtn.onclick = () => {
+      document.body.classList.toggle("dark");
+      toggleThemeBtn.textContent = document.body.classList.contains("dark") 
+        ? "☀️ Light Mode" 
+        : "🌙 Dark Mode";
+      localStorage.setItem("bibleTTS_theme", document.body.classList.contains("dark") ? "dark" : "light");
+    };
+
+    playBtn.onclick = async () => {
+      speechSynthesis.cancel();
+      isPaused = false;
+      isSpeaking = false;
+      pauseBtn.textContent = "⏸ Pause";
+
+      const today = todayISO();
+      const finishedToday = (progress.lastPlayed === today);
+
+      if (!finishedToday && playlistIndex === 0) {
+        await loadToday();
+      }
+
+      speak();
+    };
+
+    pauseBtn.onclick = () => {
+      if (!isSpeaking && !speechSynthesis.paused) return;
+
+      if (!isPaused) {
+        speechSynthesis.pause();
+        isPaused = true;
+        pauseBtn.textContent = "▶️ Resume";
+        playStatus.textContent = "⏸ Paused.";
+      } else {
+        speechSynthesis.resume();
+        isPaused = false;
+        pauseBtn.textContent = "⏸ Pause";
+        playStatus.textContent = `🔊 Reading track ${playlistIndex + 1}...`;
+      }
+    };
+
+    nextBtn.onclick = async () => {
+      speechSynthesis.cancel();
+      clearInterval(progressInterval);
+      isPaused = false;
+      isSpeaking = false;
+      pauseBtn.textContent = "⏸ Pause";
+      progressBar.style.width = "0%";
+      playRing.style.strokeDashoffset = "214";
+
+      playlistIndex++;
+      if (playlistIndex >= PLAN.length) playlistIndex = 0;
+
+      await loadToday();
+    };
+
+    stopBtn.onclick = stop;
+
+    /* ============================================
+       INIT
+       ============================================ */
+    const savedTheme = localStorage.getItem("bibleTTS_theme");
+    if (savedTheme === "dark") {
+      document.body.classList.add("dark");
+      toggleThemeBtn.textContent = "☀️ Light Mode";
+    }
+
+    loadApiKey();
+    loadProgress();
+    loadToday();
+  </script>
+
+</body>
+</html>
