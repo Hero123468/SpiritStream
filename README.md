@@ -36,6 +36,8 @@ Example:
 - Other: (CORS, dotenv, etc.)
 
 ---
+You can follow my thinking process here:
+https://github.com/Hero123468/learning-log
 
 ## How to run it locally
 
