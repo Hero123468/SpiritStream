@@ -386,7 +386,7 @@
       }
 
       localStorage.setItem(STORAGE_KEY_API, key);
-      keyStatus.textContent = "✓ API key saved successfully!.";
+      keyStatus.textContent = "✓ API key saved successfully!";
       keyStatus.className = "status success";
       console.log("API Key saved to localStorage."); // Debug Line
     }
@@ -590,7 +590,7 @@
     };
 
     pauseBtn.onclick = () => {
-      if (!isSpeaking && !speechSynthesis.paused) return;
+      if (!speechSynthesis.speaking) return;
 
       if (!isPaused) {
         speechSynthesis.pause();

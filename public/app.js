@@ -2,9 +2,9 @@
   OLD MANUAL CHAPTER LOADER (disabled for now)
   Keeping this for reference in case we want to
   reintroduce manual chapter loading later.
--------------------------------------------------------------- 
+-------------------------------------------------------------- */
 
-document.getElementById("loadBtn").addEventListener("click", async () => {
+/*document.getElementById("loadBtn").addEventListener("click", async () => {
   const bibleId = document.getElementById("bibleId").value.trim();
   const chapterId = document.getElementById("chapterId").value.trim();
   const chapterTextDiv = document.getElementById("chapterText");
