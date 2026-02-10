@@ -240,7 +240,7 @@ playBtn.onclick = async () => {
 };
 
 pauseBtn.onclick = () => {
-  if (!isSpeaking && !speechSynthesis.speaking) return;
+  if (!speechSynthesis.speaking) return;
 
   if (!isPaused) {
     speechSynthesis.pause();
